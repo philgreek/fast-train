@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { GameScreen as GameScreenEnum, Difficulty, PuzzlePieceId } from './types';
 import { MainMenu } from './components/MainMenu';
 import { GameScreen } from './components/GameScreen';
 import { PuzzleAlbum } from './components/PuzzleAlbum';
+import { BubbleGame } from './components/BubbleGame';
 import { ALL_PUZZLE_PIECES } from './constants';
 
 const App: React.FC = () => {
@@ -48,6 +48,8 @@ const App: React.FC = () => {
                 />;
       case GameScreenEnum.PuzzleAlbum:
         return <PuzzleAlbum onBack={() => setCurrentScreen(GameScreenEnum.MainMenu)} unlockedPieces={unlockedPieces} />;
+      case GameScreenEnum.BubbleGame:
+        return <BubbleGame onBackToMenu={() => setCurrentScreen(GameScreenEnum.MainMenu)} />;
       case GameScreenEnum.MainMenu:
       default:
         return <MainMenu onScreenChange={setCurrentScreen} setDifficulty={setDifficulty} currentDifficulty={difficulty} />;

@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { GameScreen, Difficulty } from '../types';
-import { PlayIcon, PuzzleIcon, SettingsIcon } from './icons';
+import { PlayIcon, PuzzleIcon, SettingsIcon, BubbleIcon } from './icons';
 import { Scenery } from './Scenery';
 import { SettingsModal } from './SettingsModal';
 
@@ -36,7 +35,11 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onScreenChange, setDifficult
         <div className="flex flex-col space-y-4 sm:space-y-6 landscape:space-y-3 w-full items-center pt-4 sm:pt-8 landscape:pt-2">
             <MenuButton onClick={() => onScreenChange(GameScreen.Playing)} className="bg-[#A5D6A7] hover:bg-green-500">
                 <PlayIcon className="w-7 h-7 sm:w-8 sm:h-8 landscape:w-6 landscape:h-6 mr-4 landscape:mr-3" />
-                Начать поездку
+                Числовой экспресс
+            </MenuButton>
+             <MenuButton onClick={() => onScreenChange(GameScreen.BubbleGame)} className="bg-sky-500 hover:bg-sky-600">
+                <BubbleIcon className="w-7 h-7 sm:w-8 sm:h-8 landscape:w-6 landscape:h-6 mr-4 landscape:mr-3" />
+                Пузыри чисел
             </MenuButton>
             <MenuButton onClick={() => onScreenChange(GameScreen.PuzzleAlbum)} className="bg-[#FFD54F] hover:bg-amber-400">
                 <PuzzleIcon className="w-7 h-7 sm:w-8 sm:h-8 landscape:w-6 landscape:h-6 mr-4 landscape:mr-3" />

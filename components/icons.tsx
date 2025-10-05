@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 interface IconProps {
@@ -14,6 +13,14 @@ export const PlayIcon: React.FC<IconProps> = ({ className }) => (
 export const PuzzleIcon: React.FC<IconProps> = ({ className }) => (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor">
         <path d="M19 2h-2v2h2v2h2V4c0-1.1-.9-2-2-2zM5 4c-1.1 0-2 .9-2 2v2h2V4H5zm14 8v-2h-2v2h2zm0 4v-2h-2v2h2zM5 12H3v2h2v-2zm0 4H3v2h2v-2zM19 20v2h-2v-2h2zm-8-2h2v2h-2v-2zm-4 0h2v2H7v-2zm-4-4H3v2h2v-2zm8-4h2v2h-2v-2zm4-2h-2v2h2V8zM7 8h2v2H7V8zm4 0h2v2h-2V8zm-4 4v-2H5v2h2zM3 20c0 1.1.9 2 2 2h2v-2H5v-2H3v2zm16 2h2v-2h-2v-2h-2v4c0 1.1.9 2 2 2z"></path>
+    </svg>
+);
+
+export const BubbleIcon: React.FC<IconProps> = ({ className }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" />
+        <circle cx="15" cy="9" r="1.5" />
+        <circle cx="12" cy="12" r="1" />
     </svg>
 );
 
