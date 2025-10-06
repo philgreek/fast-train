@@ -3,6 +3,7 @@ export enum GameScreen {
   Playing,
   PuzzleAlbum,
   BubbleGame,
+  TowerGame,
 }
 
 export interface Choice {
@@ -45,4 +46,17 @@ export interface Bubble {
   isDragged?: boolean;
   state: 'idle' | 'spawning' | 'merging' | 'splitting';
   animationProgress: number; // 0 to 1 for animations
+}
+
+export interface TowerNode {
+  id: number;
+  x: number;
+  y: number;
+  value: number;
+  radius: number;
+  isBase: boolean;
+  parents: [number, number] | null;
+  decomposedFrom: number | null; // ID of the parent node this node was decomposed from
+  state: 'idle' | 'spawning' | 'selected';
+  animationProgress: number; // 0 to 1
 }

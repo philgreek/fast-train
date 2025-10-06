@@ -260,6 +260,12 @@ export const GameScreen: React.FC<{
              <Train number={problem.startNumber} state={trainState} speed={scenerySpeed}/>
            </div>
        </div>
+       <button
+            onClick={onBackToMenu}
+            className="absolute bottom-4 left-4 px-4 py-2 sm:px-6 sm:py-3 text-lg sm:text-xl font-bold text-white bg-gray-500/50 backdrop-blur-sm rounded-xl shadow-lg hover:bg-gray-600/70 transition-colors z-50"
+        >
+            Меню
+        </button>
     </div>
   );
 };
