@@ -1,10 +1,11 @@
 import React, { useRef, useEffect } from 'react';
 import { useTowerGameLogic } from '../hooks/useTowerGameLogic';
-import { TowerNode } from '../types';
+import { TowerNode, Difficulty } from '../types';
 import { StarIcon, TimerIcon } from './icons';
 
 interface TowerGameProps {
     onBackToMenu: () => void;
+    difficulty: Difficulty;
 }
 
 const drawNode = (ctx: CanvasRenderingContext2D, node: TowerNode) => {
@@ -46,14 +47,19 @@ const drawNode = (ctx: CanvasRenderingContext2D, node: TowerNode) => {
 const drawConnection = (ctx: CanvasRenderingContext2D, from: TowerNode, to: TowerNode) => {
     ctx.save();
     
-    const isSupport = to.decomposedFrom === from.id || from.decomposedFrom === to.id;
+    const isDecompositionLink = to.decomposedFrom === from.id;
+    const isSummationLink = to.parents?.includes(from.id);
 
-    if (isSupport) {
+    if (isDecompositionLink) {
         ctx.strokeStyle = '#BDBDBD'; // Grey for support beams
         ctx.lineWidth = 8;
-    } else {
+    } else if (isSummationLink) {
         ctx.strokeStyle = '#A1887F'; // Brownish color for plank
         ctx.lineWidth = 15;
+    } else {
+        // Fallback for any other connection type if needed
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 2;
     }
 
     ctx.beginPath();
@@ -76,9 +82,9 @@ const drawDragLine = (ctx: CanvasRenderingContext2D, start: {x:number, y:number}
     ctx.restore();
 }
 
-export const TowerGame: React.FC<TowerGameProps> = ({ onBackToMenu }) => {
+export const TowerGame: React.FC<TowerGameProps> = ({ onBackToMenu, difficulty }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const { nodes, connections, score, timeLeft, isGameOver, targetNumber, resetGame, handleMouseDown, handleMouseMove, handleMouseUp, handleWheel, getDragLine, viewOffset, scale } = useTowerGameLogic(canvasRef);
+    const { nodes, connections, score, timeLeft, isGameOver, targetNumber, resetGame, handleMouseDown, handleMouseMove, handleMouseUp, handleWheel, handleDoubleClick, getDragLine, viewOffset, scale } = useTowerGameLogic(canvasRef, difficulty);
 
     const onMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
         if (!canvasRef.current) return;
@@ -97,6 +103,13 @@ export const TowerGame: React.FC<TowerGameProps> = ({ onBackToMenu }) => {
         const rect = canvasRef.current.getBoundingClientRect();
         handleMouseUp(e.clientX - rect.left, e.clientY - rect.top);
     };
+
+    const onDoubleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+        if (!canvasRef.current) return;
+        const rect = canvasRef.current.getBoundingClientRect();
+        handleDoubleClick(e.clientX - rect.left, e.clientY - rect.top);
+    };
+
 
     const onWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
         handleWheel(e);
@@ -120,31 +133,38 @@ export const TowerGame: React.FC<TowerGameProps> = ({ onBackToMenu }) => {
             }
         };
 
-        const drawBackground = (ctx: CanvasRenderingContext2D, width: number, height: number, scrollY: number) => {
+        const drawBackground = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
             const gradient = ctx.createLinearGradient(0, 0, 0, height);
             gradient.addColorStop(0, '#81D4FA'); // Light Blue
             gradient.addColorStop(1, '#E1F5FE'); // Lighter Blue
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, width, height);
-
-            // Ground - stays relative to the screen bottom but moves with camera y
-            ctx.fillStyle = '#A5D6A7'; // Green
-            ctx.fillRect(0, height - 30 + scrollY, width, height + 30);
         };
+        
+        const drawGround = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+             // Ground - stays relative to the screen bottom
+             const groundY = height - 50;
+             ctx.fillStyle = '#A5D6A7'; // Green
+             ctx.fillRect(0, groundY, width, 50);
+             ctx.fillStyle = '#8BC34A'; // Darker green top line
+             ctx.fillRect(0, groundY, width, 5);
+        }
 
         const render = () => {
             setupCanvas();
             const { clientWidth, clientHeight } = canvas;
             
+            ctx.clearRect(0, 0, clientWidth, clientHeight);
+            
             // Background is drawn in screen space
-            drawBackground(ctx, clientWidth, clientHeight, viewOffset.y);
+            drawBackground(ctx, clientWidth, clientHeight);
             
             // Apply camera transforms for world space
             ctx.save();
             ctx.translate(viewOffset.x, viewOffset.y);
             ctx.scale(scale, scale);
 
-            // Draw connections
+            // Draw connections first
             connections.forEach(conn => {
                 const fromNode = nodes.find(n => n.id === conn.from);
                 const toNode = nodes.find(n => n.id === conn.to);
@@ -152,6 +172,9 @@ export const TowerGame: React.FC<TowerGameProps> = ({ onBackToMenu }) => {
                     drawConnection(ctx, fromNode, toNode);
                 }
             });
+
+            // Draw ground (in world space, so it scrolls)
+            drawGround(ctx, clientWidth / scale, clientHeight / scale);
 
             // Draw nodes
             nodes.forEach(node => drawNode(ctx, node));
@@ -196,11 +219,12 @@ export const TowerGame: React.FC<TowerGameProps> = ({ onBackToMenu }) => {
 
             <canvas
                 ref={canvasRef}
-                className="absolute top-0 left-0 w-full h-full z-10 cursor-pointer"
+                className="absolute top-0 left-0 w-full h-full z-10 cursor-grab active:cursor-grabbing"
                 onMouseDown={onMouseDown}
                 onMouseMove={onMouseMove}
                 onMouseUp={onMouseUp}
                 onMouseLeave={onMouseUp}
+                onDoubleClick={onDoubleClick}
                 onWheel={onWheel}
             />
 

@@ -1,5 +1,6 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { TowerNode } from '../types';
+
+import { useState, useRef, useCallback, useEffect, RefObject, WheelEvent } from 'react';
+import { TowerNode, Difficulty } from '../types';
 
 const GAME_DURATION = 120; // 2 minutes
 const NODE_RADIUS = 40;
@@ -23,7 +24,22 @@ const createNode = (id: number, value: number, x: number, y: number, isBase = fa
     animationProgress: 0,
 });
 
-export const useTowerGameLogic = (canvasRef: React.RefObject<HTMLCanvasElement>) => {
+const getDifficultySettings = (difficulty: Difficulty) => {
+    switch (difficulty) {
+        case Difficulty.Easy:
+            return { baseRange: [5, 15] as [number, number], targetBonus: [5, 15] as [number, number] };
+        case Difficulty.Medium:
+            return { baseRange: [10, 25] as [number, number], targetBonus: [10, 30] as [number, number] };
+        case Difficulty.Hard:
+            return { baseRange: [20, 50] as [number, number], targetBonus: [25, 50] as [number, number] };
+        default:
+            return { baseRange: [5, 15] as [number, number], targetBonus: [5, 15] as [number, number] };
+    }
+}
+
+export const useTowerGameLogic = (
+    // FIX: Replaced `React.RefObject` with the imported `RefObject` type to resolve the "Cannot find namespace 'React'" error.
+    canvasRef: RefObject<HTMLCanvasElement>, difficulty: Difficulty) => {
     const [nodes, setNodes] = useState<TowerNode[]>([]);
     const [connections, setConnections] = useState<{from: number, to: number}[]>([]);
     const [score, setScore] = useState(0);
@@ -59,15 +75,16 @@ export const useTowerGameLogic = (canvasRef: React.RefObject<HTMLCanvasElement>)
         setScore(0);
         setTimeLeft(GAME_DURATION);
         
-        const baseValue1 = Math.floor(random(10, 25));
-        const baseValue2 = Math.floor(random(10, 25));
+        const settings = getDifficultySettings(difficulty);
+        const baseValue1 = Math.floor(random(settings.baseRange[0], settings.baseRange[1]));
+        const baseValue2 = Math.floor(random(settings.baseRange[0], settings.baseRange[1]));
 
         const baseNode1 = createNode(1, baseValue1, clientWidth * 0.3, clientHeight - BASE_Y_OFFSET, true);
         const baseNode2 = createNode(2, baseValue2, clientWidth * 0.7, clientHeight - BASE_Y_OFFSET, true);
 
         setNodes([baseNode1, baseNode2]);
         setConnections([]);
-        setTargetNumber(baseValue1 + baseValue2 + Math.floor(random(10, 30)));
+        setTargetNumber(baseValue1 + baseValue2 + Math.floor(random(settings.targetBonus[0], settings.targetBonus[1])));
         
         // Center the view on the base nodes
         const initialOffset = { x: clientWidth / 2 - (baseNode1.x + baseNode2.x) / 2, y: 0 };
@@ -75,7 +92,7 @@ export const useTowerGameLogic = (canvasRef: React.RefObject<HTMLCanvasElement>)
         targetViewOffset.current = initialOffset;
         setScale(1);
 
-    }, [canvasRef]);
+    }, [canvasRef, difficulty]);
 
     useEffect(() => {
         const timeoutId = setTimeout(() => resetGame(), 100);
@@ -101,6 +118,32 @@ export const useTowerGameLogic = (canvasRef: React.RefObject<HTMLCanvasElement>)
             if (timerId.current) clearInterval(timerId.current);
         };
     }, [isGameOver]);
+
+    const handleDoubleClick = useCallback((x: number, y: number) => {
+        if (isGameOver) return;
+        const { x: worldX, y: worldY } = screenToWorld(x, y);
+        const clickedNode = nodes.find(node => Math.hypot(worldX - node.x, worldY - node.y) < node.radius);
+
+        if (clickedNode && clickedNode.value >= 2) {
+            const hasBeenDecomposed = nodes.some(n => n.decomposedFrom === clickedNode.id);
+            if (hasBeenDecomposed) return; // Can't decompose twice
+
+            const part1 = Math.floor(clickedNode.value / 2);
+            const part2 = clickedNode.value - part1;
+
+            if (part1 > 0 && part2 > 0) {
+                const yPos = clickedNode.y + VERTICAL_SPACING / 1.5;
+                const xOffset = NODE_RADIUS * 1.5;
+                const newNode1 = createNode(Date.now() + 1, part1, clickedNode.x - xOffset, yPos, false, null, clickedNode.id);
+                const newNode2 = createNode(Date.now() + 2, part2, clickedNode.x + xOffset, yPos, false, null, clickedNode.id);
+                
+                setNodes(prev => [...prev, newNode1, newNode2]);
+                setConnections(prev => [...prev, { from: clickedNode.id, to: newNode1.id }, { from: clickedNode.id, to: newNode2.id }]);
+                setScore(s => s + 5);
+            }
+        }
+    }, [isGameOver, nodes, screenToWorld]);
+
 
     const handleMouseDown = useCallback((x: number, y: number) => {
         if (isGameOver) return;
@@ -135,59 +178,27 @@ export const useTowerGameLogic = (canvasRef: React.RefObject<HTMLCanvasElement>)
             const endNode = nodes.find(node => node.id !== startNode?.id && Math.hypot(worldX - node.x, worldY - node.y) < node.radius);
     
             if (startNode && endNode) {
-                const alreadyConnected = connections.some(c => 
-                    (c.from === startNode.id && c.to === endNode.id) || 
-                    (c.from === endNode.id && c.to === startNode.id)
+                const childExists = nodes.some(n => 
+                    (n.parents?.[0] === startNode.id && n.parents?.[1] === endNode.id) ||
+                    (n.parents?.[1] === startNode.id && n.parents?.[0] === endNode.id)
                 );
     
-                if (!alreadyConnected) {
-                    const isStartNodeAPart = startNode.decomposedFrom !== null;
-                    const isEndNodeAPart = endNode.decomposedFrom !== null;
-    
-                    if (isStartNodeAPart && isEndNodeAPart) {
-                        // Disallow connecting two parts
-                    } else if (!isStartNodeAPart && !isEndNodeAPart) {
-                        // DECOMPOSITION
-                        setConnections(prev => [...prev, { from: startNode.id, to: endNode.id }]);
-                        const nodeToDecompose = endNode;
-                        const hasBeenDecomposed = nodes.some(n => n.decomposedFrom === nodeToDecompose.id);
-                        
-                        if (nodeToDecompose.value >= 10 && !hasBeenDecomposed) {
-                            let part1 = Math.floor(nodeToDecompose.value / 10) * 10;
-                            let part2 = nodeToDecompose.value % 10;
-                            if (part2 === 0) { // e.g. 20 -> 10, 10
-                                part1 = nodeToDecompose.value / 2;
-                                part2 = nodeToDecompose.value / 2;
-                            }
-    
-                            if (part1 > 0 && part2 > 0) {
-                                const yPos = nodeToDecompose.y - VERTICAL_SPACING / 1.5;
-                                const xOffset = NODE_RADIUS * 1.5;
-                                const newNode1 = createNode(Date.now() + 1, part1, nodeToDecompose.x - xOffset, yPos, false, null, nodeToDecompose.id);
-                                const newNode2 = createNode(Date.now() + 2, part2, nodeToDecompose.x + xOffset, yPos, false, null, nodeToDecompose.id);
-                                
-                                setNodes(prev => [...prev, newNode1, newNode2]);
-                                setConnections(prev => [...prev, { from: nodeToDecompose.id, to: newNode1.id }, { from: nodeToDecompose.id, to: newNode2.id }]);
-                                setScore(s => s + 5);
-                            }
-                        }
-                    } else {
-                        // SUMMATION
-                        const newValue = startNode.value + endNode.value;
-                        const newNode = createNode(Date.now(), newValue, (startNode.x + endNode.x) / 2, Math.min(startNode.y, endNode.y) - VERTICAL_SPACING, false, [startNode.id, endNode.id]);
-                        setNodes(prev => [...prev, newNode]);
-                        setConnections(prev => [...prev, { from: startNode.id, to: endNode.id }]);
-                        setScore(s => s + 10);
-    
-                        if (newValue === targetNumber) {
-                            setScore(s => s + 50);
-                            setTimeLeft(t => t + 15);
-                            const otherNodes = nodes.filter(n => n.decomposedFrom === null && n.id !== startNode.id && n.id !== endNode.id);
-                            if (otherNodes.length > 0) {
-                               setTargetNumber(newValue + otherNodes[otherNodes.length-1].value);
-                            } else {
-                               setTargetNumber(newValue + Math.floor(random(10,30)));
-                            }
+                if (!childExists) {
+                    const newValue = startNode.value + endNode.value;
+                    const newNode = createNode(Date.now(), newValue, (startNode.x + endNode.x) / 2, Math.min(startNode.y, endNode.y) - VERTICAL_SPACING, false, [startNode.id, endNode.id]);
+                    setNodes(prev => [...prev, newNode]);
+                    setConnections(prev => [...prev, { from: startNode.id, to: newNode.id }, { from: endNode.id, to: newNode.id }]);
+                    setScore(s => s + 10);
+
+                    if (newValue === targetNumber) {
+                        setScore(s => s + 50);
+                        setTimeLeft(t => t + 15);
+                        const otherNodes = nodes.filter(n => n.decomposedFrom === null && !n.parents && n.id !== startNode.id && n.id !== endNode.id);
+                        if (otherNodes.length > 0) {
+                           setTargetNumber(newValue + otherNodes[otherNodes.length-1].value);
+                        } else {
+                           const settings = getDifficultySettings(difficulty);
+                           setTargetNumber(newValue + Math.floor(random(settings.targetBonus[0],settings.targetBonus[1])));
                         }
                     }
                 }
@@ -199,9 +210,9 @@ export const useTowerGameLogic = (canvasRef: React.RefObject<HTMLCanvasElement>)
         dragLineEnd.current = null;
         isPanning.current = false;
 
-    }, [nodes, connections, targetNumber, screenToWorld]);
+    }, [nodes, targetNumber, screenToWorld, difficulty]);
 
-    const handleWheel = useCallback((e: React.WheelEvent) => {
+    const handleWheel = useCallback((e: WheelEvent) => {
         if (!canvasRef.current) return;
         e.preventDefault();
 
@@ -279,5 +290,5 @@ export const useTowerGameLogic = (canvasRef: React.RefObject<HTMLCanvasElement>)
         return { start: { x: startNode.x, y: startNode.y }, end: dragLineEnd.current };
     };
 
-    return { nodes, connections, score, timeLeft, isGameOver, targetNumber, resetGame, handleMouseDown, handleMouseMove, handleMouseUp, handleWheel, getDragLine, viewOffset, scale };
+    return { nodes, connections, score, timeLeft, isGameOver, targetNumber, resetGame, handleMouseDown, handleMouseMove, handleMouseUp, handleWheel, handleDoubleClick, getDragLine, viewOffset, scale };
 };

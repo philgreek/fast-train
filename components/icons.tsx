@@ -30,6 +30,12 @@ export const TowerIcon: React.FC<IconProps> = ({ className }) => (
     </svg>
 );
 
+export const AbacusIcon: React.FC<IconProps> = ({ className }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+        <path d="M3 3h18v2H3V3zm0 4h18v2H3V7zm0 10h18v2H3v-2zm0 4h18v2H3v-2zM7 9h2v6H7V9zm4 0h2v6h-2V9zm4 0h2v6h-2V9z"></path>
+    </svg>
+);
+
 export const SettingsIcon: React.FC<IconProps> = ({ className }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="3"></circle>

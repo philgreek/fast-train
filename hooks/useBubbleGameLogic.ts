@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { Bubble } from '../types';
+
+import { useState, useEffect, useRef, useCallback, RefObject } from 'react';
+import { Bubble, Difficulty } from '../types';
 
 const BASE_BUBBLE_SIZE = 5;
 const GAME_DURATION = 60;
@@ -8,11 +9,17 @@ const TIME_BONUS_BUBBLE = 5;
 const random = (min: number, max: number) => Math.random() * (max - min) + min;
 const radiusFromValue = (value: number) => Math.sqrt(value) * BASE_BUBBLE_SIZE + 15;
 
-const getLevelSettings = (score: number) => {
-    if (score < 100) return { maxBubbles: 7, maxSpeed: 0.5, minBubbles: 5 };
-    if (score < 300) return { maxBubbles: 9, maxSpeed: 0.7, minBubbles: 6 };
-    if (score < 600) return { maxBubbles: 11, maxSpeed: 0.9, minBubbles: 7 };
-    return { maxBubbles: 13, maxSpeed: 1.1, minBubbles: 8 };
+const getLevelSettings = (difficulty: Difficulty) => {
+    switch (difficulty) {
+        case Difficulty.Easy:
+            return { maxBubbles: 7, maxSpeed: 0.5, minBubbles: 5, targetRange: [15, 30] as [number, number] };
+        case Difficulty.Medium:
+            return { maxBubbles: 10, maxSpeed: 0.8, minBubbles: 7, targetRange: [30, 60] as [number, number] };
+        case Difficulty.Hard:
+            return { maxBubbles: 13, maxSpeed: 1.1, minBubbles: 9, targetRange: [50, 100] as [number, number] };
+        default:
+            return { maxBubbles: 7, maxSpeed: 0.5, minBubbles: 5, targetRange: [15, 30] as [number, number] };
+    }
 };
 
 const createBubble = (value: number, x: number, y: number, vx?: number, vy?: number): Bubble => ({
@@ -28,8 +35,10 @@ const createBubble = (value: number, x: number, y: number, vx?: number, vy?: num
 });
 
 export const useBubbleGameLogic = (
-    canvasRef: React.RefObject<HTMLCanvasElement>,
-    createRipple: (x: number, y: number, radius: number) => void
+    // FIX: Replaced `React.RefObject` with the imported `RefObject` type to resolve the "Cannot find namespace 'React'" error.
+    canvasRef: RefObject<HTMLCanvasElement>,
+    createRipple: (x: number, y: number, radius: number) => void,
+    difficulty: Difficulty
 ) => {
     const bubblesRef = useRef<Bubble[]>([]);
     const [targetValue, setTargetValue] = useState(0);
@@ -46,8 +55,9 @@ export const useBubbleGameLogic = (
 
 
     const generateTarget = useCallback(() => {
-        setTargetValue(Math.floor(random(20, 61)));
-    }, []);
+        const settings = getLevelSettings(difficulty);
+        setTargetValue(Math.floor(random(settings.targetRange[0], settings.targetRange[1])));
+    }, [difficulty]);
 
     const resetGame = useCallback(() => {
         if (!canvasRef.current) return;
@@ -57,7 +67,7 @@ export const useBubbleGameLogic = (
         setTimeLeft(GAME_DURATION);
         generateTarget();
         bubblesRef.current = [];
-        const settings = getLevelSettings(0);
+        const settings = getLevelSettings(difficulty);
         for (let i = 0; i < settings.maxBubbles; i++) {
             const value = Math.floor(random(5, 30));
             bubblesRef.current.push(
@@ -68,7 +78,7 @@ export const useBubbleGameLogic = (
                 )
             );
         }
-    }, [canvasRef, generateTarget]);
+    }, [canvasRef, generateTarget, difficulty]);
 
     useEffect(() => {
         const timeoutId = setTimeout(() => resetGame(), 100);
@@ -194,7 +204,7 @@ export const useBubbleGameLogic = (
             
             timeScaleRef.current += (1 - timeScaleRef.current) * 0.05;
 
-            const settings = getLevelSettings(score);
+            const settings = getLevelSettings(difficulty);
             if (currentBubbles.length < settings.minBubbles && clientWidth > 0) {
                  const value = Math.floor(random(5, 30));
                  bubblesRef.current.push(createBubble(value, random(radiusFromValue(value), clientWidth - radiusFromValue(value)), -radiusFromValue(value)));
@@ -271,7 +281,7 @@ export const useBubbleGameLogic = (
         return () => {
             if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
         };
-    }, [isGameOver, score, generateTarget, canvasRef]);
+    }, [isGameOver, difficulty, generateTarget, canvasRef]);
 
     return { bubbles: bubblesRef.current, targetValue, score, timeLeft, isGameOver, resetGame, handleDoubleClick, handleMouseDown, handleMouseMove, handleMouseUp };
 };

@@ -22,7 +22,8 @@ const isPuzzleComplete = (puzzle: Puzzle, unlockedSet: Set<PuzzlePieceId>): bool
 };
 
 export const PuzzleAlbum: React.FC<PuzzleAlbumProps> = ({ onBack, unlockedPieces }) => {
-  const unlockedSet = new Set(unlockedPieces);
+  // FIX: Explicitly typed the Set to `Set<PuzzlePieceId>` to resolve a TypeScript type inference issue where it was being inferred as `Set<unknown>`.
+  const unlockedSet = new Set<PuzzlePieceId>(unlockedPieces);
 
   return (
     <div className="w-full h-screen flex flex-col items-center p-4 sm:p-8 bg-amber-100 overflow-y-auto" style={{ backgroundImage: `linear-gradient(rgba(255,255,255,0.7), rgba(255,255,255,0.7)), url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d2b48c' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`}}>

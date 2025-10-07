@@ -1,10 +1,11 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import { useBubbleGameLogic } from '../hooks/useBubbleGameLogic';
-import { Bubble } from '../types';
+import { Bubble, Difficulty } from '../types';
 import { StarIcon, TimerIcon } from './icons';
 
 interface BubbleGameProps {
   onBackToMenu: () => void;
+  difficulty: Difficulty;
 }
 
 const drawBubble = (ctx: CanvasRenderingContext2D, bubble: Bubble) => {
@@ -62,7 +63,7 @@ const drawBubble = (ctx: CanvasRenderingContext2D, bubble: Bubble) => {
 
 type Ripple = { x: number; y: number; progress: number; maxRadius: number };
 
-export const BubbleGame: React.FC<BubbleGameProps> = ({ onBackToMenu }) => {
+export const BubbleGame: React.FC<BubbleGameProps> = ({ onBackToMenu, difficulty }) => {
     const mainCanvasRef = useRef<HTMLCanvasElement>(null);
     const backgroundCanvasRef = useRef<HTMLCanvasElement>(null);
     const foregroundCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -74,7 +75,7 @@ export const BubbleGame: React.FC<BubbleGameProps> = ({ onBackToMenu }) => {
         ripplesRef.current.push({ x, y, progress: 0, maxRadius: radius * 2 });
     }, []);
     
-    const { bubbles, targetValue, score, timeLeft, isGameOver, resetGame, handleDoubleClick, handleMouseDown, handleMouseMove, handleMouseUp } = useBubbleGameLogic(mainCanvasRef, createRipple);
+    const { bubbles, targetValue, score, timeLeft, isGameOver, resetGame, handleDoubleClick, handleMouseDown, handleMouseMove, handleMouseUp } = useBubbleGameLogic(mainCanvasRef, createRipple, difficulty);
     
     const onMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
         if (!mainCanvasRef.current) return;

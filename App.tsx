@@ -5,6 +5,7 @@ import { GameScreen } from './components/GameScreen';
 import { PuzzleAlbum } from './components/PuzzleAlbum';
 import { BubbleGame } from './components/BubbleGame';
 import { TowerGame } from './components/TowerGame';
+import { NumberCounterGame } from './components/NumberCounterGame';
 import { ALL_PUZZLE_PIECES } from './constants';
 
 const App: React.FC = () => {
@@ -50,9 +51,11 @@ const App: React.FC = () => {
       case GameScreenEnum.PuzzleAlbum:
         return <PuzzleAlbum onBack={() => setCurrentScreen(GameScreenEnum.MainMenu)} unlockedPieces={unlockedPieces} />;
       case GameScreenEnum.BubbleGame:
-        return <BubbleGame onBackToMenu={() => setCurrentScreen(GameScreenEnum.MainMenu)} />;
+        return <BubbleGame onBackToMenu={() => setCurrentScreen(GameScreenEnum.MainMenu)} difficulty={difficulty} />;
       case GameScreenEnum.TowerGame:
-        return <TowerGame onBackToMenu={() => setCurrentScreen(GameScreenEnum.MainMenu)} />;
+        return <TowerGame onBackToMenu={() => setCurrentScreen(GameScreenEnum.MainMenu)} difficulty={difficulty} />;
+      case GameScreenEnum.NumberCounter:
+        return <NumberCounterGame onBackToMenu={() => setCurrentScreen(GameScreenEnum.MainMenu)} difficulty={difficulty} />;
       case GameScreenEnum.MainMenu:
       default:
         return <MainMenu onScreenChange={setCurrentScreen} setDifficulty={setDifficulty} currentDifficulty={difficulty} />;

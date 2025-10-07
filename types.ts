@@ -4,6 +4,7 @@ export enum GameScreen {
   PuzzleAlbum,
   BubbleGame,
   TowerGame,
+  NumberCounter,
 }
 
 export interface Choice {
@@ -59,4 +60,37 @@ export interface TowerNode {
   decomposedFrom: number | null; // ID of the parent node this node was decomposed from
   state: 'idle' | 'spawning' | 'selected';
   animationProgress: number; // 0 to 1
+}
+
+// Types for NumberCounter Game
+export type ActionType = 'DECOMPOSE' | 'INPUT_ANSWER' | 'SELECT_PARTS' | 'END_STEP';
+
+export interface NumberPart {
+  id: string; // Unique ID, e.g. "n1_tens"
+  text: string;
+  value: number;
+  type: 'number' | 'operator' | 'equals' | 'question';
+  placeValue: 0 | 1 | 2 | 3; // units, tens, etc.
+  isClickable: boolean;
+  isPulsing: boolean;
+  isSolved: boolean;
+}
+
+export type EquationLine = NumberPart[];
+
+export interface GameStep {
+  lines: EquationLine[];
+  action: {
+    type: ActionType;
+    triggerPartIds: string[];
+    correctAnswer?: number;
+    requiredSelections?: number;
+    validator?: (selection: number[]) => boolean;
+  };
+  prompt?: string;
+}
+
+export interface NumberCounterProblem {
+  id: string;
+  steps: GameStep[];
 }

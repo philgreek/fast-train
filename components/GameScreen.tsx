@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useGameLogic } from '../hooks/useGameLogic';
 import { Difficulty, Choice, PuzzlePieceId } from '../types';
@@ -85,9 +86,9 @@ const ChoiceButton: React.FC<{ choice: Choice, operation: string, onClick: (choi
     return (
         <button 
             onClick={() => onClick(choice)}
-            className="w-32 h-32 sm:w-40 sm:h-40 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg flex flex-col items-center justify-center transform hover:scale-110 hover:bg-white transition-all duration-300"
+            className="w-32 h-32 sm:w-40 sm:h-40 landscape:w-24 landscape:h-24 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg flex flex-col items-center justify-center transform hover:scale-110 hover:bg-white transition-all duration-300"
         >
-            <span className="text-5xl sm:text-6xl font-black text-gray-700">{operation}{choice.value}</span>
+            <span className="text-5xl sm:text-6xl landscape:text-4xl font-black text-gray-700">{operation}{choice.value}</span>
         </button>
     );
 };
@@ -147,7 +148,8 @@ export const GameScreen: React.FC<{
   
   const [scoreChange, setScoreChange] = useState<{ value: number; key: number } | null>(null);
   const [timeChange, setTimeChange] = useState<{ value: number; key: number } | null>(null);
-  const feedbackTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // FIX: Replaced `NodeJS.Timeout` with `number` for browser compatibility, as `setTimeout` in the browser returns a number.
+  const feedbackTimeoutRef = useRef<number | null>(null);
 
   const prevScoreRef = useRef(0);
 
@@ -188,7 +190,7 @@ export const GameScreen: React.FC<{
       setScenerySpeed(prev => Math.max(prev * 0.75, 0.5));
     }
     
-    feedbackTimeoutRef.current = setTimeout(() => {
+    feedbackTimeoutRef.current = window.setTimeout(() => {
         setScoreChange(null);
         setTimeChange(null);
     }, 1500);
@@ -246,17 +248,17 @@ export const GameScreen: React.FC<{
       </div>
       
       {/* Game Area */}
-      <div className="relative z-50 w-full h-full flex flex-col justify-end items-center pb-24 sm:pb-32">
+      <div className="relative z-50 w-full h-full flex flex-col justify-end items-center pb-24 sm:pb-32 landscape:pb-12">
         {/* Choices */}
-        <div className="flex justify-center space-x-4 sm:space-x-8 md:space-x-12">
+        <div className="flex justify-center space-x-4 sm:space-x-8 md:space-x-12 landscape:space-x-4">
             {problem.choices.map((choice, index) => (
                 <ChoiceButton key={index} choice={choice} operation={problem.operation} onClick={onChoiceClick} />
             ))}
         </div>
       </div>
        {/* Train Position */}
-       <div className="absolute bottom-12 sm:bottom-16 left-1/2 -translate-x-1/2 z-50">
-           <div className="transform scale-75 sm:scale-100">
+       <div className="absolute bottom-12 sm:bottom-16 landscape:bottom-4 left-1/2 -translate-x-1/2 z-50">
+           <div className="transform scale-75 sm:scale-100 landscape:scale-50">
              <Train number={problem.startNumber} state={trainState} speed={scenerySpeed}/>
            </div>
        </div>
